@@ -20,10 +20,13 @@ let lastBlocks = {};
 
 // Check if "last_blocks.json" exists or create it
 try {
-  lastBlocks = require("./last_blocks.json");
+  if (fs.existsSync("./last_blocks.json"))
+    lastBlocks = require("./last_blocks.json");
+  else {
+    fs.writeFileSync("./last_blocks.json", JSON.stringify({}, null, 2));
+  }
 } catch (err) {
-  console.log("creation json file", err);
-  fs.writeFileSync("./last_blocks.json", JSON.stringify({}, null, 2));
+  console.log("error during reading json file", err);
 }
 
 const scanLinks = {
