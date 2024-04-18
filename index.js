@@ -16,21 +16,33 @@ const discordToken = process.env.DISCORD_CLIENT_TOKEN;
 client.login(discordToken);
 
 const wallets = process.env.ETH_WALLETS.split(",") || [];
+let lastBlocks = {};
 
-const lastBlocks = require("./last_blocks.json");
-// Convert all JSON uppercase
-Object.entries(lastBlocks).forEach(([network, wallets]) => {
-  lastBlocks[network] = Object.fromEntries(
-    Object.entries(wallets).map(([wallet, block]) => [
-      wallet.toUpperCase(),
-      block,
-    ])
-  );
-});
+// Check if "last_blocks.json" exists or create it
+try {
+  lastBlocks = require("./last_blocks.json");
+} catch (err) {
+  console.log("creation json file", err);
+  fs.writeFileSync("./last_blocks.json", JSON.stringify({}, null, 2));
+}
 
 const scanLinks = {
   ETH: `https://api.etherscan.io/api?module=account&action=tokentx&page=1&offset=100&&endblock=27025780&sort=desc&apikey=${process.env.ETHERSCAN_APIKEY}`,
 };
+
+// Create object with chains and wallets
+const chains = Object.keys(scanLinks);
+for (const chain of chains) {
+  if (!lastBlocks[chain]) {
+    lastBlocks[chain] = {};
+  }
+  // Add wallets
+  for (const wallet of wallets) {
+    if (!lastBlocks[chain][wallet.toUpperCase()]) {
+      lastBlocks[chain][wallet.toUpperCase()] = 0;
+    }
+  }
+}
 
 const getResult = async (url, chain, wallet, startblock) => {
   const urlToCall = `${url}&address=${wallet}&startblock=${startblock}`;
